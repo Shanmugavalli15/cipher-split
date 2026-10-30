@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIPHER-SPLIT // Asymmetric Bomb Defusal Terminal</title>
+  <meta name="description" content="Real-time asymmetric multiplayer bomb defusal game. Communicate, decrypt intel, and defuse before the timer runs out.">
+  
+  <!-- Futuristic Cyberpunk Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,400&family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💣</text></svg>">
+</head>
+<body class="crt-overlay">
+  <!-- Scanlines and Ambient Glow -->
+  <div class="scanlines"></div>
+  <div class="ambient-glow"></div>
+
+  <!-- Audio and Top System Utility Bar -->
+  <header class="system-header">
+    <div class="brand">
+      <span class="cyber-glitch" data-text="CIPHER-SPLIT">CIPHER-SPLIT</span>
+      <span class="system-badge">v2.4.0 // MIL-SPEC</span>
+    </div>
+    
+    <div class="header-status">
+      <span id="connection-status" class="status-indicator online">
+        <span class="dot"></span> NET: CONNECTED
+      </span>
+      <button id="btn-sound-toggle" class="btn-util" title="Toggle Tactical Audio">
+        <span class="icon">🔊</span> AUDIO: <span id="sound-state-label">ON</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Application Container -->
+  <main class="app-container">
+
+    <!-- ============================================== -->
+    <!-- VIEW 1: LOBBY & RECRUITMENT DOCK               -->
+    <!-- ============================================== -->
+    <section id="view-lobby" class="game-view active">
+      <div class="hero-banner">
+        <h1 class="hero-title">ASYMMETRIC CO-OP DEFUSAL</h1>
+        <p class="hero-subtitle">
+          Two or more operatives. Split classified intel. Zero room for error.
+          Operatives must communicate verbally to reconstruct the 4-digit deactivation cipher.
+        </p>
+      </div>
+
+      <div class="lobby-grid">
+        <!-- Identity Setup Card -->
+        <div class="cyber-card identity-card">
+          <div class="card-header">
+            <span class="terminal-prompt">&gt;</span> OPERATIVE DOSSIER
+          </div>
+          <div class="card-body">
+            <label for="input-player-name">CALLSIGN / CODENAME</label>
+            <div class="input-glow-wrapper">
+              <input type="text" id="input-player-name" maxlength="15" placeholder="e.g. GHOST_9" autocomplete="off">
+            </div>
+            <div class="agent-avatar-preview">
+              <span class="avatar-icon">⚡</span>
+              <span id="display-agent-callsign">AGENT // UNREGISTERED</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Room Actions -->
+        <div class="cyber-card action-card">
+          <div class="card-header">
+            <span class="terminal-prompt">&gt;</span> OPERATION DEPLOYMENT
+          </div>
+          <div class="card-body">
+            <!-- Create Squad Form -->
+            <div class="form-group">
+              <label>HOST NEW OPERATION</label>
+              <div class="difficulty-picker">
+                <button type="button" class="btn-diff active" data-diff="normal">STANDARD (120s / 3 Strikes)</button>
+                <button type="button" class="btn-diff" data-diff="hardcore">HARDCORE (75s / 2 Strikes)</button>
+                <button type="button" class="btn-diff" data-diff="training">TRAINING (150s / 4 Strikes)</button>
+              </div>
+              <button id="btn-create-room" class="btn-primary btn-action">
+                <span class="btn-icon">⚡</span> INITIALIZE SQUAD LOBBY
+              </button>
+            </div>
+
+            <div class="divider"><span>OR INFILTRATE EXISTING</span></div>
+
+            <!-- Join Squad Form -->
+            <div class="form-group">
+              <label for="input-join-code">ENTER SQUAD FREQUENCY CODE (4-CHAR)</label>
+              <div class="join-row">
+                <input type="text" id="input-join-code" maxlength="4" placeholder="e.g. X9KV" style="text-transform:uppercase;">
+                <button id="btn-join-room" class="btn-secondary">
+                  JOIN FREQ
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Solo Practice Drill -->
+            <div class="solo-shortcut">
+              <button id="btn-solo-drill" class="btn-ghost">
+                🎯 LAUNCH SOLO RECON SIMULATION (Practice All Clues)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tactical Field Manual Info -->
+      <div class="briefing-box">
+        <h3 class="briefing-title">TACTICAL DEFUSAL PROTOCOL</h3>
+        <div class="briefing-steps">
+          <div class="step-item">
+            <span class="step-num">01</span>
+            <strong>ASYMMETRIC INTEL</strong>
+            <p>Each squad member sees different classified shards. No single operative has the full 4-digit code.</p>
+          </div>
+          <div class="step-item">
+            <span class="step-num">02</span>
+            <strong>VERBAL SYNTHESIS</strong>
+            <p>Share your module readings, mathematical equations, and serial code relations over voice or squad comms.</p>
+          </div>
+          <div class="step-item">
+            <span class="step-num">03</span>
+            <strong>KEYPAD DEFUSAL</strong>
+            <p>Keypad inputs synchronize in real time. Submit before the clock hits zero. Incorrect submissions incur severe strike penalties!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 2: SQUAD STAGING DOCK                     -->
+    <!-- ============================================== -->
+    <section id="view-staging" class="game-view">
+      <div class="staging-header">
+        <div class="staging-title-box">
+          <span class="badge-tag">SQUAD FREQUENCY</span>
+          <div class="room-code-display">
+            <span id="display-room-code">----</span>
+            <button id="btn-copy-code" class="btn-copy" title="Copy Room Code">COPY CODE</button>
+          </div>
+        </div>
+        <div class="mission-params">
+          <span class="param-item">PARAM: <strong id="display-difficulty">NORMAL</strong></span>
+          <span class="param-item">TIME: <strong id="display-time-limit">120s</strong></span>
+          <span class="param-item">MAX STRIKES: <strong id="display-max-strikes">3</strong></span>
+        </div>
+      </div>
+
+      <!-- Role Selection Section -->
+      <div class="role-selector-bar">
+        <span class="role-selector-label">CHOOSE SPECIALIZATION:</span>
+        <div class="role-buttons">
+          <button type="button" class="btn-role-opt active" data-role="DEFUSER">
+            <span class="role-icon">🛠️</span>
+            <span class="role-info">
+              <strong>FIELD DEFUSER</strong>
+              <small>Keypad operator & bomb diagnostics</small>
+            </span>
+          </button>
+          <button type="button" class="btn-role-opt" data-role="CRYPTANALYST">
+            <span class="role-icon">📜</span>
+            <span class="role-info">
+              <strong>CRYPTANALYST</strong>
+              <small>Declassification cipher & frequency charts</small>
+            </span>
+          </button>
+          <button type="button" class="btn-role-opt" data-role="OVERWATCH">
+            <span class="role-icon">📡</span>
+            <span class="role-info">
+              <strong>OVERWATCH</strong>
+              <small>Checksum telemetry & parity satellite feed</small>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Operative Squad Roster -->
+      <div class="squad-roster-box">
+        <div class="roster-header">
+          <span>OPERATIVES CONNECTED (<span id="roster-count">1</span>/4)</span>
+          <span class="status-pulse">STANDBY FOR PROTOCOL</span>
+        </div>
+        <div id="roster-list" class="roster-grid">
+          <!-- Dynamically populated operative cards -->
+        </div>
+      </div>
+
+      <!-- Commander Launch Bar -->
+      <div class="staging-footer">
+        <button id="btn-toggle-ready" class="btn-secondary btn-large">
+          TOGGLE READINESS: <span id="ready-status-label">NOT READY</span>
+        </button>
+        <button id="btn-start-mission" class="btn-primary btn-large glow-start">
+          COMMENCE DEFUSAL SEQUENCE ⚡
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 3: ACTIVE BOMB DEFUSAL INTERFACE           -->
+    <!-- ============================================== -->
+    <section id="view-mission" class="game-view">
+      <!-- High-Intensity Mission HUD Header -->
+      <div class="mission-hud">
+        <div class="hud-item hud-identity">
+          <span class="hud-label">OPERATIVE</span>
+          <span id="hud-operative-name" class="hud-value">AGENT</span>
+          <span id="hud-role-badge" class="badge-role">DEFUSER</span>
+        </div>
+
+        <div class="hud-item hud-serial">
+          <span class="hud-label">BOMB CASING SERIAL</span>
+          <span id="hud-serial-number" class="hud-value serial-glow">CX-0000-X</span>
+        </div>
+
+        <div class="hud-item hud-timer-box">
+          <span class="hud-label">DETONATION COUNTDOWN</span>
+          <div id="hud-timer" class="hud-timer-digits">02:00</div>
+        </div>
+
+        <div class="hud-item hud-strikes-box">
+          <span class="hud-label">SECURITY STRIKES</span>
+          <div id="hud-strikes-container" class="strikes-display">
+            <span class="strike-slot" data-index="1">⚡</span>
+            <span class="strike-slot" data-index="2">⚡</span>
+            <span class="strike-slot" data-index="3">⚡</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Mission Battlefield Layout (3 Columns) -->
+      <div class="tactical-mission-grid">
+
+        <!-- PANEL 1: ASYMMETRIC INTELLIGENCE DOSSIER -->
+        <div class="tactical-panel panel-intel">
+          <div class="panel-header">
+            <span class="icon">📂</span>
+            <span>CLASSIFIED DOSSIER // TOP SECRET</span>
+            <span class="blinking-tag">RESTRICTED</span>
+          </div>
+          <div class="panel-body">
+            <div class="intel-banner">
+              ⚠️ <strong id="intel-role-headline">FIELD OPERATIVE INTEL</strong>:
+              <span>Share these findings verbally. Do not assume your squad sees this!</span>
+            </div>
+
+            <!-- Dynamic Asymmetric Clues Container -->
+            <div id="clues-container" class="clues-stack">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Interactive Deduction Scratchpad -->
+            <div class="scratchpad-box">
+              <div class="scratchpad-title">SQUAD DEDUCTION SCRATCHPAD</div>
+              <div class="scratchpad-digits">
+                <div class="digit-col">
+                  <span>D1</span>
+                  <input type="text" id="scratch-d1" maxlength="1" placeholder="?">
+                </div>
+                <div class="digit-col">
+                  <span>D2</span>
+                  <input type="text" id="scratch-d2" maxlength="1" placeholder="?">
+                </div>
+                <div class="digit-col">
+                  <span>D3</span>
+                  <input type="text" id="scratch-d3" maxlength="1" placeholder="?">
+                </div>
+                <div class="digit-col">
+                  <span>D4</span>
+                  <input type="text" id="scratch-d4" maxlength="1" placeholder="?">
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Tactical Pings -->
+            <div class="quick-ping-panel">
+              <span class="ping-label">BROADCAST QUICK STATUS:</span>
+              <div class="ping-buttons">
+                <button class="btn-ping" data-ping="D1 DEDUCED!">D1 READY</button>
+                <button class="btn-ping" data-ping="D2 DEDUCED!">D2 READY</button>
+                <button class="btn-ping" data-ping="D3 DEDUCED!">D3 READY</button>
+                <button class="btn-ping" data-ping="D4 DEDUCED!">D4 READY</button>
+                <button class="btn-ping" data-ping="WAIT! DO NOT SUBMIT!">HOLD DEFUSAL!</button>
+                <button class="btn-ping" data-ping="SUBMIT CODE NOW!">SUBMIT NOW!</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL 2: BOMB CORE & SYNCHRONIZED KEYPAD -->
+        <div class="tactical-panel panel-keypad">
+          <div class="panel-header">
+            <span class="icon">💣</span>
+            <span>DEFUSAL TERMINAL MK-IV</span>
+            <span class="fuse-status">LIVE CIRCUIT</span>
+          </div>
+          <div class="panel-body bomb-casing">
+            <!-- Bomb Visual Hardware Elements -->
+            <div class="hardware-wires">
+              <div class="wire wire-red"></div>
+              <div class="wire wire-cyan"></div>
+              <div class="wire wire-yellow"></div>
+              <div class="wire wire-green"></div>
+            </div>
+
+            <!-- Authoritative 4-Digit Synchronized Display Buffer -->
+            <div class="keypad-screen-wrapper">
+              <div class="screen-label">4-DIGIT DEACTIVATION BUFFER</div>
+              <div id="keypad-buffer-display" class="keypad-buffer">
+                <div class="buffer-cell" id="digit-slot-0">_</div>
+                <div class="buffer-cell" id="digit-slot-1">_</div>
+                <div class="buffer-cell" id="digit-slot-2">_</div>
+                <div class="buffer-cell" id="digit-slot-3">_</div>
+              </div>
+              <div id="keypad-status-indicator" class="keypad-feedback">AWAITING 4-DIGIT INPUT SEQUENCE</div>
+            </div>
+
+            <!-- Interactive 0-9 Cyber Keypad -->
+            <div class="keypad-matrix">
+              <button class="key-btn" data-key="1">1</button>
+              <button class="key-btn" data-key="2">2</button>
+              <button class="key-btn" data-key="3">3</button>
+              <button class="key-btn" data-key="4">4</button>
+              <button class="key-btn" data-key="5">5</button>
+              <button class="key-btn" data-key="6">6</button>
+              <button class="key-btn" data-key="7">7</button>
+              <button class="key-btn" data-key="8">8</button>
+              <button class="key-btn" data-key="9">9</button>
+              <button class="key-btn key-clear" id="btn-key-clear">CLR</button>
+              <button class="key-btn" data-key="0">0</button>
+              <button class="key-btn key-submit" id="btn-key-submit">EXEC</button>
+            </div>
+
+            <div class="keypad-instruction">
+              <span>KEYPAD ACCESSIBLE TO SQUAD // KEYBOARD SUPPORT: [0-9], [BACKSPACE], [ENTER]</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL 3: SQUAD COMMS & LIVE TELEMETRY LOG -->
+        <div class="tactical-panel panel-comms">
+          <div class="panel-header">
+            <span class="icon">📡</span>
+            <span>LIVE SQUAD TELEMETRY</span>
+            <span class="live-dot"></span>
+          </div>
+          <div class="panel-body comms-layout">
+            <div id="telemetry-logs" class="telemetry-stream">
+              <!-- Real-time log entries -->
+            </div>
+
+            <form id="chat-form" class="chat-input-bar">
+              <input type="text" id="chat-input" placeholder="Transmit tactical intel to squad..." maxlength="120" autocomplete="off">
+              <button type="submit" class="btn-send">SEND</button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MISSION OUTCOME MODALS                         -->
+  <!-- ============================================== -->
+
+  <!-- 1. DETONATION MODAL (FAILURE) -->
+  <div id="modal-detonated" class="outcome-modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-box modal-fail">
+      <div class="hazard-tape">DANGER // DETONATION OCCURRED // DANGER</div>
+      <h2 class="outcome-title glow-red">MISSION FAILED</h2>
+      <p class="outcome-subtitle" id="fail-reason-text">THE EXPLOSIVE PAYLOAD DETONATED.</p>
+
+      <div class="outcome-stats">
+        <div class="stat-row">
+          <span>TARGET DISARM CODE:</span>
+          <strong id="fail-secret-code" class="highlight-code">0000</strong>
+        </div>
+        <div class="stat-row">
+          <span>SERIAL IDENTITY:</span>
+          <strong id="fail-serial">AEGIS-0000-X</strong>
+        </div>
+        <div class="stat-row">
+          <span>FINAL STRIKES:</span>
+          <strong id="fail-strikes" class="text-danger">3 / 3</strong>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-retry-failed" class="btn-primary btn-large">
+          RETRY MISSION WITH NEW CIPHER
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. DEFUSED MODAL (VICTORY) -->
+  <div id="modal-defused" class="outcome-modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-box modal-win">
+      <div class="hazard-tape win-tape">SUCCESS // PAYLOAD NEUTRALIZED // CLEARED</div>
+      <h2 class="outcome-title glow-green">THREAT DEFUSED</h2>
+      <p class="outcome-subtitle">THE ORDNANCE HAS BEEN SAFELY DEACTIVATED.</p>
+
+      <div class="outcome-stats">
+        <div class="stat-row">
+          <span>VERIFIED CODE:</span>
+          <strong id="win-secret-code" class="highlight-code win-code">0000</strong>
+        </div>
+        <div class="stat-row">
+          <span>TIME REMAINING:</span>
+          <strong id="win-time-left">00:45s</strong>
+        </div>
+        <div class="stat-row">
+          <span>STRIKES SUSTAINED:</span>
+          <strong id="win-strikes">0 STRIKES</strong>
+        </div>
+        <div class="stat-row">
+          <span>TACTICAL SQUAD RATING:</span>
+          <strong id="win-rank" class="rank-badge">S-RANK</strong>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-next-mission" class="btn-primary btn-large glow-green-btn">
+          COMMENCE NEXT DEFUSAL DRILL
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error / Alert Toast Notification -->
+  <div id="toast-notification" class="cyber-toast"></div>
+
+  <!-- Client JavaScript -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
